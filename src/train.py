@@ -1,21 +1,17 @@
 # src/train.py
 
+import os
+from datetime import datetime
+
+import joblib
 import mlflow
 import mlflow.sklearn
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    classification_report,
-)
-from sklearn.model_selection import cross_val_score
-import joblib
-import os
 import numpy as np
-from datetime import datetime
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (accuracy_score, classification_report, f1_score,
+                             precision_score, recall_score)
+from sklearn.model_selection import cross_val_score
 
 from preprocess import load_data, preprocess_data
 

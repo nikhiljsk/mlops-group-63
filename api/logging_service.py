@@ -3,13 +3,13 @@ Logging service for tracking API requests, predictions, and system events.
 Provides persistent storage of prediction logs and system metrics.
 """
 
-import sqlite3
+import asyncio
 import json
 import logging
-import asyncio
-from datetime import datetime
-from typing import Dict, Any, List, Optional
+import sqlite3
 from contextlib import asynccontextmanager
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from .config import Settings
 

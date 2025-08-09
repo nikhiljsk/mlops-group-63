@@ -1,10 +1,11 @@
 # src/preprocess.py
 
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-import joblib
 import os
+
+import joblib
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 
 def load_data(file_path):

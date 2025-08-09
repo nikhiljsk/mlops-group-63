@@ -4,23 +4,18 @@ This module provides functions for evaluating model performance, generating
 detailed reports, and comparing multiple models.
 """
 
+import os
+from typing import Any, Dict, List, Tuple
+
+import joblib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    confusion_matrix,
-    classification_report,
-    roc_auc_score,
-)
-from sklearn.model_selection import cross_val_score, learning_curve
-import matplotlib.pyplot as plt
 import seaborn as sns
-from typing import Dict, List, Tuple, Any
-import joblib
-import os
+from sklearn.metrics import (accuracy_score, classification_report,
+                             confusion_matrix, f1_score, precision_score,
+                             recall_score, roc_auc_score)
+from sklearn.model_selection import cross_val_score, learning_curve
 
 
 class ModelEvaluator:

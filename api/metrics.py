@@ -3,18 +3,13 @@ Prometheus metrics collection for the Iris Classification API.
 Tracks API performance, prediction metrics, and system health indicators.
 """
 
+import logging
 import time
 from datetime import datetime
-from typing import Dict, Any
-from prometheus_client import (
-    Counter,
-    Histogram,
-    Gauge,
-    Info,
-    generate_latest,
-    CONTENT_TYPE_LATEST,
-)
-import logging
+from typing import Any, Dict
+
+from prometheus_client import (CONTENT_TYPE_LATEST, Counter, Gauge, Histogram,
+                               Info, generate_latest)
 
 logger = logging.getLogger(__name__)
 

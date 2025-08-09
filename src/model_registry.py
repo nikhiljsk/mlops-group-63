@@ -4,10 +4,11 @@ This module provides functions to interact with the MLflow Model Registry,
 including model promotion, version management, and production deployment.
 """
 
+import logging
+from typing import Any, Dict, Optional
+
 import mlflow
 from mlflow.tracking import MlflowClient
-from typing import Optional, Dict, Any
-import logging
 
 # Set up logging for model registry operations
 logging.basicConfig(level=logging.INFO)

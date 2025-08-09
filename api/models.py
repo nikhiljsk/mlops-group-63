@@ -4,9 +4,10 @@ These models ensure type safety and provide automatic validation for API endpoin
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Any
-from pydantic import BaseModel, Field, validator
+from typing import Any, Dict, List, Optional
+
 import numpy as np
+from pydantic import BaseModel, Field, validator
 
 
 class PredictionRequest(BaseModel):

@@ -4,28 +4,23 @@ This module provides REST API endpoints for model predictions, health checks,
 and monitoring metrics following MLOps best practices.
 """
 
-import os
 import logging
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict
 
+import uvicorn
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 
 from .config import Settings
-from .prediction_service import PredictionService
 from .logging_service import LoggingService
-from .models import (
-    PredictionRequest,
-    PredictionResponse,
-    BatchPredictionRequest,
-    BatchPredictionResponse,
-    ModelInfoResponse,
-    HealthResponse,
-)
 from .metrics import metrics_collector
+from .models import (BatchPredictionRequest, BatchPredictionResponse,
+                     HealthResponse, ModelInfoResponse, PredictionRequest,
+                     PredictionResponse)
+from .prediction_service import PredictionService
 
 # Configure logging
 logging.basicConfig(

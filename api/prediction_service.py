@@ -3,13 +3,14 @@ Prediction service for loading and managing ML models.
 Handles model loading from local files and MLflow registry with fallback mechanisms.
 """
 
-import os
 import logging
+import os
+import time
+from datetime import datetime
+from typing import Any, Dict, Optional, Tuple
+
 import joblib
 import numpy as np
-from datetime import datetime
-from typing import Optional, Dict, Any, Tuple
-import time
 
 try:
     import mlflow
