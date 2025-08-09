@@ -18,7 +18,7 @@ help:
 	@echo "  format        - Format code (black, isort)"
 	@echo "  install-dev   - Install development dependencies"
 	@echo "  dev           - Start development environment with hot reload"
-	@echo "  monitoring    - Start with monitoring stack (Prometheus + Grafana)"
+	@echo "  monitoring    - Start all services, including monitoring"
 	@echo "  deploy        - Deploy using deployment script"
 	@echo "  deploy-prod   - Deploy production environment with docker-compose"
 	@echo "  rollback      - Rollback to previous version"
@@ -84,8 +84,7 @@ dev:
 	docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 # Start with monitoring stack
-monitoring:
-	docker-compose --profile monitoring up -d
+monitoring: up
 
 # View API logs only
 api-logs:

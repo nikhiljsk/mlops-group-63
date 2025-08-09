@@ -41,10 +41,8 @@ services:
     ports:
       - "5001:5001"
     volumes:
-      # Use a named volume for the database to handle permissions correctly.
-      - mlflow_db_data:/db
-      # Use a bind mount for artifacts so train.py can access them.
-      - ./mlruns:/mlruns
+      # Mount a single named volume to the data directory
+      - mlflow_data:/mlflow_data
     networks:
       - iris-network
     restart: unless-stopped
@@ -73,9 +71,7 @@ services:
     networks:
       - iris-network
     restart: unless-stopped
-    profiles:
-      - monitoring
-
+    
   # Grafana for visualization
   grafana:
     image: grafana/grafana:latest
@@ -91,19 +87,13 @@ services:
     networks:
       - iris-network
     restart: unless-stopped
-    profiles:
-      - monitoring
     depends_on:
       - prometheus
 
 volumes:
-  # Add the new named volume for the mlflow database
-  mlflow_db_data:
-    driver: local
-  prometheus_data:
-    driver: local
-  grafana_data:
-    driver: local
+  mlflow_data: {}
+  prometheus_data: {}
+  grafana_data: {}
 
 networks:
   iris-network:
