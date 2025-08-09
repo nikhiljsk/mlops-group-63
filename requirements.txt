@@ -11,5 +11,6 @@ seaborn
 pytest
 pytest-cov
 requests
+httpx
 python-multipart
 prometheus-client
