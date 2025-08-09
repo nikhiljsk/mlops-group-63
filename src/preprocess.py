@@ -6,8 +6,10 @@ from sklearn.model_selection import train_test_split
 import joblib
 import os
 
+
 def load_data(file_path):
     return pd.read_csv(file_path)
+
 
 def preprocess_data(df):
     X = df.drop("species", axis=1)
@@ -21,6 +23,7 @@ def preprocess_data(df):
     joblib.dump(scaler, "artifacts/scaler.pkl")
 
     return train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
 
 if __name__ == "__main__":
     df = load_data("data/iris.csv")
