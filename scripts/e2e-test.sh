@@ -135,7 +135,7 @@ docker-compose up -d
 sleep 45
 
 run_test "Compose Health Check" "curl -f http://localhost:8000/health"
-run_test "MLflow Service" "curl -f http://localhost:5000/health || curl -f http://localhost:5000/ || true"
+run_test "MLflow Service" "curl -f http://localhost:5001/health || curl -f http://localhost:5001/ || true"
 
 print_info "Stopping Docker Compose stack..."
 docker-compose down

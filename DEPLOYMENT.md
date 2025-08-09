@@ -140,7 +140,7 @@ REQUEST_TIMEOUT=30
 
 ```bash
 # MLflow Configuration (if using MLflow registry)
-MLFLOW_TRACKING_URI=http://mlflow:5000
+MLFLOW_TRACKING_URI=http://mlflow:5001
 MLFLOW_MODEL_NAME=iris-classifier
 
 # Security Configuration

@@ -47,7 +47,7 @@ environments:
       DATABASE_URL: "sqlite:///./logs.db"
       LOG_PREDICTIONS: "true"
       LOG_REQUESTS: "true"
-      MLFLOW_TRACKING_URI: "http://mlflow-staging:5000"
+      MLFLOW_TRACKING_URI: "http://mlflow-staging:5001"
     volumes:
       - "./logs:/app/logs"
       - "./data:/app/data:ro"
@@ -80,7 +80,7 @@ environments:
       DATABASE_URL: "sqlite:///./logs.db"
       LOG_PREDICTIONS: "true"
       LOG_REQUESTS: "true"
-      MLFLOW_TRACKING_URI: "http://mlflow-prod:5000"
+      MLFLOW_TRACKING_URI: "http://mlflow-prod:5001"
       MAX_REQUEST_SIZE: "2048"
       REQUEST_TIMEOUT: "60"
     volumes:

@@ -214,12 +214,12 @@ jobs:
       mlflow:
         image: python:3.11-slim
         ports:
-          - 5000:5000
+          - 5001:5001
         env:
           MLFLOW_BACKEND_STORE_URI: sqlite:///mlflow/mlflow.db
           MLFLOW_DEFAULT_ARTIFACT_ROOT: /mlflow/artifacts
         options: >-
-          --health-cmd "curl -f http://localhost:5000/health || exit 1"
+          --health-cmd "curl -f http://localhost:5001/health || exit 1"
           --health-interval 30s
           --health-timeout 10s
           --health-retries 5
@@ -266,7 +266,7 @@ jobs:
           --backend-store-uri sqlite:///mlflow/mlflow.db \
           --default-artifact-root ./mlflow/artifacts \
           --host 0.0.0.0 \
-          --port 5000 &
+          --port 5001 &
         sleep 30
         
     - name: Run integration tests
@@ -274,7 +274,7 @@ jobs:
         pytest tests/integration/ -v
       env:
         PYTHONPATH: .
-        MLFLOW_TRACKING_URI: http://localhost:5000
+        MLFLOW_TRACKING_URI: http://localhost:5001
         
     - name: Test API endpoints end-to-end
       run: |

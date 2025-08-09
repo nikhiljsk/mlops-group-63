@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
     # Set up MLflow tracking - use local file store if server not available
     try:
-        mlflow.set_tracking_uri("http://127.0.0.1:5000")
+        mlflow.set_tracking_uri("http://127.0.0.1:5001")
         # Test connection
         mlflow.get_experiment_by_name("test")
         print("✅ Connected to MLflow tracking server")

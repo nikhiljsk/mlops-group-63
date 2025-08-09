@@ -12,21 +12,19 @@ services:
     environment:
       - DEBUG=true
       - LOG_LEVEL=DEBUG
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_TRACKING_URI=http://mlflow:5001
       - DATABASE_URL=sqlite:///./logs.db
       - USE_MLFLOW_REGISTRY=true
       - MLFLOW_MODEL_NAME=iris-classifier
     volumes:
-      # Mount source code for development (hot reload)
       - ./api:/app/api
       - ./src:/app/src
-      # Persistent volumes for data
       - ./artifacts:/app/artifacts
       - ./data:/app/data
       - ./logs:/app/logs
-      - mlflow_data:/app/mlruns
     depends_on:
-      - mlflow
+      mlflow:
+        condition: service_healthy
     networks:
       - iris-network
     restart: unless-stopped
@@ -39,35 +37,25 @@ services:
 
   # MLflow tracking server
   mlflow:
-    image: python:3.11-slim
+    build: ./mlflow
     ports:
-      - "5000:5000"
-    environment:
-      - MLFLOW_BACKEND_STORE_URI=sqlite:///mlflow/mlflow.db
-      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+      - "5001:5001"
     volumes:
-      - mlflow_data:/mlflow
+      # Use a named volume for the database to handle permissions correctly.
+      - mlflow_db_data:/db
+      # Use a bind mount for artifacts so train.py can access them.
+      - ./mlruns:/mlruns
     networks:
       - iris-network
-    command: >
-      bash -c "
-        pip install mlflow[extras] &&
-        mkdir -p /mlflow/artifacts &&
-        mlflow server 
-          --backend-store-uri sqlite:///mlflow/mlflow.db 
-          --default-artifact-root /mlflow/artifacts 
-          --host 0.0.0.0 
-          --port 5000
-      "
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001')"]
+      interval: 15s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 20s
 
-  # Prometheus for metrics collection (optional)
+  # Prometheus for metrics collection
   prometheus:
     image: prom/prometheus:latest
     ports:
@@ -88,7 +76,7 @@ services:
     profiles:
       - monitoring
 
-  # Grafana for visualization (optional)
+  # Grafana for visualization
   grafana:
     image: grafana/grafana:latest
     ports:
@@ -109,7 +97,8 @@ services:
       - prometheus
 
 volumes:
-  mlflow_data:
+  # Add the new named volume for the mlflow database
+  mlflow_db_data:
     driver: local
   prometheus_data:
     driver: local

@@ -28,7 +28,7 @@ make health
 
 # Or manually
 curl http://localhost:8000/health
-curl http://localhost:5000/health
+curl http://localhost:5001/health
 ```
 
 ### 3. Test the API
@@ -50,7 +50,7 @@ curl -X POST "http://localhost:8000/predict" \
 | Service | Port | Description |
 |---------|------|-------------|
 | iris-api | 8000 | Main API service |
-| mlflow | 5000 | MLflow tracking server |
+| mlflow | 5001 | MLflow tracking server |
 | prometheus | 9090 | Metrics collection (with monitoring profile) |
 | grafana | 3000 | Visualization dashboard (with monitoring profile) |
 
@@ -76,7 +76,7 @@ make monitoring
 
 # Access services
 # - API: http://localhost:8000
-# - MLflow: http://localhost:5000
+# - MLflow: http://localhost:5001
 # - Prometheus: http://localhost:9090
 # - Grafana: http://localhost:3000 (admin/admin)
 ```
@@ -89,7 +89,7 @@ Key environment variables for configuration:
 |----------|---------|-------------|
 | DEBUG | false | Enable debug mode |
 | LOG_LEVEL | INFO | Logging level |
-| MLFLOW_TRACKING_URI | http://mlflow:5000 | MLflow server URL |
+| MLFLOW_TRACKING_URI | http://mlflow:5001 | MLflow server URL |
 | USE_MLFLOW_REGISTRY | true | Use MLflow model registry |
 | DATABASE_URL | sqlite:///./logs.db | Database connection string |
 

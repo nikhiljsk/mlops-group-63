@@ -107,7 +107,7 @@ shell:
 health:
 	@echo "Checking service health..."
 	@curl -s http://localhost:8000/health | python -m json.tool || echo "API not responding"
-	@curl -s http://localhost:5000/health | python -m json.tool || echo "MLflow not responding"
+	@curl -s -o /dev/null -w "MLflow: HTTP %{http_code}\n" http://localhost:5001 || echo "MLflow not responding"
 
 # Run local CI/CD pipeline test
 test-local:

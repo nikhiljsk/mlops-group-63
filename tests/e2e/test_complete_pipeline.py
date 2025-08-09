@@ -232,7 +232,7 @@ class TestCompleteMLOpsPipeline:
             
             # Test MLflow service (if configured)
             try:
-                response = requests.get("http://localhost:5000/health", timeout=10)
+                response = requests.get("http://localhost:5001/health", timeout=10)
                 # MLflow might not have a health endpoint, so check for any response
                 assert response.status_code in [200, 404]
             except requests.exceptions.RequestException:
