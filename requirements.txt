@@ -1,0 +1,15 @@
+scikit-learn
+pandas
+mlflow
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+joblib
+matplotlib
+seaborn
+pytest
+pytest-cov
+requests
+python-multipart
+prometheus-client

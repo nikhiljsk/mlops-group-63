@@ -1,0 +1,40 @@
+version: '3.8'
+
+# Development override for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  iris-api:
+    build:
+      target: builder  # Use builder stage for development dependencies
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - RELOAD=true
+    volumes:
+      # Mount source code for hot reload
+      - ./api:/app/api
+      - ./src:/app/src
+      - ./tests:/app/tests
+    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    
+  # Development database (PostgreSQL alternative)
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=iris_dev
+      - POSTGRES_USER=iris_user
+      - POSTGRES_PASSWORD=iris_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - iris-network
+    restart: unless-stopped
+    profiles:
+      - postgres
+
+volumes:
+  postgres_data:
+    driver: local
