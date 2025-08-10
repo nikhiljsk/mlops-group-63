@@ -27,4 +27,4 @@ def preprocess_data(df):
     joblib.dump(scaler, "artifacts/scaler.pkl")
     
     # Split data
-    return train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+    return train_test_split(X_scaled, y, test_size=0.4, random_state=42)

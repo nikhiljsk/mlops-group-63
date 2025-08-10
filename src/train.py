@@ -4,8 +4,11 @@ import os
 import joblib
 import mlflow
 import mlflow.sklearn
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score, f1_score
 
 from preprocess import load_data, preprocess_data
@@ -50,28 +53,26 @@ if __name__ == "__main__":
     mlflow.set_tracking_uri("file:./mlruns")
     mlflow.set_experiment("Iris_Classification")
     
-    # Train models
-    lr_model, lr_metrics = train_and_evaluate_model(
-        LogisticRegression(random_state=42), 
-        X_train, X_test, y_train, y_test, 
-        "LogisticRegression"
-    )
+    # Define models to train
+    models = [
+        (LogisticRegression(random_state=42), "LogisticRegression"),
+        (RandomForestClassifier(random_state=42), "RandomForest"),
+        (SVC(random_state=42), "SVM"),
+        (KNeighborsClassifier(), "KNN"),
+        (GaussianNB(), "NaiveBayes")
+    ]
     
-    rf_model, rf_metrics = train_and_evaluate_model(
-        RandomForestClassifier(random_state=42), 
-        X_train, X_test, y_train, y_test, 
-        "RandomForest"
-    )
+    # Train all models
+    model_results = []
+    for model, name in models:
+        trained_model, metrics = train_and_evaluate_model(
+            model, X_train, X_test, y_train, y_test, name
+        )
+        model_results.append((trained_model, metrics, name))
     
-    # Select best model
-    if rf_metrics["f1_score"] > lr_metrics["f1_score"]:
-        best_model = rf_model
-        best_name = "RandomForest"
-        print(f"🏆 Best model: RandomForest (F1: {rf_metrics['f1_score']:.4f})")
-    else:
-        best_model = lr_model
-        best_name = "LogisticRegression"
-        print(f"🏆 Best model: LogisticRegression (F1: {lr_metrics['f1_score']:.4f})")
+    # Select best model based on F1 score
+    best_model, best_metrics, best_name = max(model_results, key=lambda x: x[1]["f1_score"])
+    print(f"🏆 Best model: {best_name} (F1: {best_metrics['f1_score']:.4f})")
     
     # Save best model
     joblib.dump(best_model, "artifacts/best_model.pkl")
