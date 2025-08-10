@@ -311,6 +311,87 @@ async def get_metrics():
         )
 
 
+@app.post("/retrain")
+async def retrain_models():
+    """
+    Retrain all models and deploy the best one.
+    This endpoint triggers model retraining and automatically updates the serving model.
+    """
+    try:
+        logger.info("Starting model retraining...")
+        
+        # Import training modules
+        import subprocess
+        import sys
+        from pathlib import Path
+        
+        # Run training script
+        result = subprocess.run([
+            sys.executable, "src/train.py"
+        ], capture_output=True, text=True, timeout=300)
+        
+        if result.returncode != 0:
+            logger.error(f"Training failed: {result.stderr}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Model training failed: {result.stderr}"
+            )
+        
+        # Check if new model was created
+        model_path = Path("artifacts/best_model.pkl")
+        if not model_path.exists():
+            raise HTTPException(
+                status_code=500,
+                detail="Training completed but no model file was created"
+            )
+        
+        # Reload the model in the prediction service
+        if prediction_service:
+            await prediction_service.load_model()
+            logger.info("✅ New model loaded successfully")
+            
+            # Update metrics with new model info
+            model_info = prediction_service.get_model_info()
+            metrics_collector.update_model_info(model_info)
+        
+        # Log the retraining event
+        if logging_service:
+            await logging_service.log_prediction(
+                {"action": "retrain_models"}, 
+                {"status": "success", "timestamp": datetime.now().isoformat()}
+            )
+        
+        # Record retraining metrics (using existing method)
+        metrics_collector.record_prediction(
+            model_version="retrained",
+            prediction="retrain_success", 
+            confidence=1.0,
+            duration=0.0
+        )
+        
+        return {
+            "status": "success",
+            "message": "Models retrained and deployed successfully",
+            "timestamp": datetime.now().isoformat(),
+            "model_info": prediction_service.get_model_info() if prediction_service else None
+        }
+        
+    except subprocess.TimeoutExpired:
+        logger.error("Training timeout")
+        metrics_collector.record_api_error("/retrain", "training_timeout")
+        raise HTTPException(
+            status_code=408, 
+            detail="Model training timed out (5 minutes limit)"
+        )
+    except Exception as e:
+        logger.error(f"Retrain endpoint error: {e}")
+        metrics_collector.record_api_error("/retrain", "retraining_error")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Retraining failed: {str(e)}"
+        )
+
+
 # Retraining endpoints removed for simplicity - not required for basic assignment
 
 

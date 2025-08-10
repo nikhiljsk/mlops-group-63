@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iris Classification MLOps Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        .card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+        
+        .prediction-form {
+            grid-column: span 2;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .form-group input {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online {
+            background: #27ae60;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-offline {
+            background: #e74c3c;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .metric-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .link-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+        
+        .link-btn:hover {
+            background: #2980b9;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌸 Iris Classification MLOps Demo</h1>
+            <p>Complete ML Pipeline with Training, Deployment, and Monitoring</p>
+        </div>
+        
+        <div class="dashboard">
+            <!-- System Status -->
+            <div class="card">
+                <h3>🚀 System Status</h3>
+                <div id="system-status">
+                    <p><span class="status-indicator status-offline" id="api-status"></span>API Server: <span id="api-text">Checking...</span></p>
+                    <p><span class="status-indicator status-offline" id="model-status"></span>ML Model: <span id="model-text">Checking...</span></p>
+                    <p><span class="status-indicator status-offline" id="metrics-status"></span>Metrics: <span id="metrics-text">Checking...</span></p>
+                </div>
+                
+                <div class="links">
+                    <a href="http://localhost:8000/docs" target="_blank" class="link-btn">📚 API Docs</a>
+                    <a href="http://localhost:9090" target="_blank" class="link-btn">📊 Prometheus</a>
+                </div>
+            </div>
+            
+            <!-- Model Information -->
+            <div class="card">
+                <h3>🤖 Model Information</h3>
+                <div id="model-info">
+                    <p><strong>Model:</strong> <span id="model-name">Loading...</span></p>
+                    <p><strong>Version:</strong> <span id="model-version">Loading...</span></p>
+                    <p><strong>Type:</strong> <span id="model-type">Loading...</span></p>
+                    <p><strong>Classes:</strong> <span id="model-classes">Loading...</span></p>
+                </div>
+            </div>
+            
+            <!-- Prediction Form -->
+            <div class="card prediction-form">
+                <h3>🔮 Make Prediction</h3>
+                <form id="prediction-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="sepal_length">Sepal Length (cm)</label>
+                            <input type="number" id="sepal_length" step="0.1" min="0" max="10" value="5.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="sepal_width">Sepal Width (cm)</label>
+                            <input type="number" id="sepal_width" step="0.1" min="0" max="10" value="3.5" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="petal_length">Petal Length (cm)</label>
+                            <input type="number" id="petal_length" step="0.1" min="0" max="10" value="1.4" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="petal_width">Petal Width (cm)</label>
+                            <input type="number" id="petal_width" step="0.1" min="0" max="10" value="0.2" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn">🔍 Predict Species</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadSampleData()">📝 Load Sample</button>
+                    <button type="button" class="btn btn-secondary" onclick="runBatchTest()">📊 Batch Test</button>
+                </form>
+                
+                <div id="prediction-result" class="result"></div>
+            </div>
+            
+            <!-- Live Metrics -->
+            <div class="card">
+                <h3>📈 Live Metrics</h3>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-value" id="total-predictions">0</div>
+                        <div class="metric-label">Total Predictions</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" id="avg-confidence">0%</div>
+                        <div class="metric-label">Avg Confidence</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" id="uptime">0s</div>
+                        <div class="metric-label">Uptime</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="predictions-chart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Pipeline Actions -->
+            <div class="card">
+                <h3>⚙️ Pipeline Actions</h3>
+                <p>Demonstrate MLOps capabilities:</p>
+                <button class="btn" onclick="runTraining()">🏋️ Retrain Models</button>
+                <button class="btn" onclick="runTests()">🧪 Run Tests</button>
+                <button class="btn" onclick="viewLogs()">📋 View Logs</button>
+                <button class="btn" onclick="exportMetrics()">📊 Export Metrics</button>
+                
+                <div id="action-result" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+# DVC Parameters Configuration
+# Centralized parameter management for reproducible experiments
+
+preprocess:
+  test_size: 0.2
+  random_state: 42
+  scale_features: true
+
+train:
+  random_state: 42
+  models:
+    logistic_regression:
+      C: 1.0
+      max_iter: 1000
+      solver: 'lbfgs'
+    
+    random_forest:
+      n_estimators: 100
+      max_depth: null
+      min_samples_split: 2
+      min_samples_leaf: 1
+    
+    svm:
+      C: 1.0
+      kernel: 'rbf'
+      gamma: 'scale'
+    
+    knn:
+      n_neighbors: 5
+      weights: 'uniform'
+      algorithm: 'auto'
+    
+    naive_bayes:
+      var_smoothing: 1e-9
+
+evaluate:
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1_score
+  cross_validation:
+    cv_folds: 5
+    scoring: 'f1_weighted'

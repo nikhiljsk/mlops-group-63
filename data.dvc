@@ -1,0 +1,7 @@
+# DVC file for data versioning
+# This file tracks the iris dataset for reproducibility
+
+outs:
+- md5: a3c4d1c1f8b5e6d7e8f9a0b1c2d3e4f5
+  size: 4551
+  path: data/iris.csv

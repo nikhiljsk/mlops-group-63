@@ -1,0 +1,46 @@
+# DVC Pipeline Configuration
+# This file defines the ML pipeline stages for reproducible experiments
+
+stages:
+  prepare_data:
+    cmd: python src/preprocess.py
+    deps:
+      - data/iris.csv
+      - src/preprocess.py
+    outs:
+      - artifacts/scaler.pkl
+    params:
+      - preprocess.test_size
+      - preprocess.random_state
+    metrics:
+      - metrics/data_stats.json
+    
+  train_models:
+    cmd: python src/train.py
+    deps:
+      - data/iris.csv
+      - src/train.py
+      - src/preprocess.py
+      - artifacts/scaler.pkl
+    outs:
+      - artifacts/best_model.pkl
+    params:
+      - train.models
+      - train.random_state
+    metrics:
+      - metrics/model_performance.json
+    plots:
+      - plots/confusion_matrix.png
+      - plots/feature_importance.png
+      
+  evaluate_model:
+    cmd: python src/evaluate.py
+    deps:
+      - artifacts/best_model.pkl
+      - artifacts/scaler.pkl
+      - data/iris.csv
+    metrics:
+      - metrics/evaluation.json
+    plots:
+      - plots/roc_curves.png
+      - plots/prediction_distribution.png
