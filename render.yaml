@@ -30,7 +30,7 @@ services:
         fromService:
           type: web
           name: mlflow-server # Connects to the MLflow service above
-          property: url
+          envVarKey: RENDER_EXTERNAL_URL  # Use the external URL environment variable
       - key: DATABASE_URL
         value: sqlite:///logs/logs.db
       - key: DEBUG
