@@ -22,9 +22,6 @@ RUN pip install --upgrade pip && \
     pip install \
     mlflow[extras]==2.8.1 \
     psycopg2-binary \
-    boto3 \
-    azure-storage-blob \
-    google-cloud-storage \
     requests \
     flask
 
@@ -46,7 +43,7 @@ USER mlflow
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:5001/health || exit 1
 
-# Expose port (Render will map this to external port)
+# Expose port
 EXPOSE 5001
 
 # Start MLflow server wrapper

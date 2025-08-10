@@ -63,9 +63,8 @@ docs/_build/
 .env.development
 
 # Docker files (don't copy docker files into docker)
-Dockerfile*
+Dockerfile
 docker-compose*.yml
-.dockerignore
 
 # Deployment files (not needed in container)
 deploy/logs/
