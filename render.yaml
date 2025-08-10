@@ -5,9 +5,11 @@ services:
   # 1. MLflow Server
   - type: web
     name: mlflow-server
-    plan: free # Explicitly set the free instance type
+    plan: free # Use Render's free instance type
     runtime: docker
-    dockerfilePath: ./mlflow/Dockerfile
+    # Explicitly set the build context to the 'mlflow' directory
+    dockerContext: ./mlflow
+    dockerfilePath: Dockerfile
     healthCheckPath: /health
     envVars:
       - key: MLFLOW_BACKEND_STORE_URI
@@ -21,23 +23,25 @@ services:
   # 2. Iris Prediction API
   - type: web
     name: iris-api
-    plan: free # Explicitly set the free instance type
+    plan: free # Use Render's free instance type
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    # Explicitly set the build context to the project root directory
+    dockerContext: .
+    dockerfilePath: Dockerfile
     healthCheckPath: /health
     envVars:
       - key: MLFLOW_TRACKING_URI
         fromService:
           type: web
           name: mlflow-server # Connects to the MLflow service above
-          envVarKey: RENDER_EXTERNAL_URL  # Use the external URL environment variable
+          envVarKey: RENDER_EXTERNAL_URL  # Gets the full external URL
       - key: DATABASE_URL
         value: sqlite:///logs/logs.db
       - key: DEBUG
         value: "false"
 
-# The 'databases' block defines the PostgreSQL instance.
+# The 'databases' block is the correct place to define the PostgreSQL instance.
 databases:
   - name: mlflow-db-postgres
     plan: free # Use Render's free tier for the database
-    postgresMajorVersion: "13" # Required field for PostgreSQL version
+    postgresMajorVersion: "13"
