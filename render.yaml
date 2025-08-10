@@ -4,8 +4,9 @@ services:
   # 1. PostgreSQL Database for MLflow
   - type: pserv
     name: mlflow-db-postgres
-    # ✨ FIX: Correctly specify the PostgreSQL version as a top-level property
-    version: "13"
+    # ✨ FIX: The 'version' must be nested inside a 'postgres' block.
+    postgres:
+      version: "13"
     disk:
       name: postgres-data
       sizeGB: 1
@@ -23,7 +24,6 @@ services:
           type: pserv
           name: mlflow-db-postgres
           property: connectionString
-      # ✨ FIX: Use the attached Render Disk for artifacts instead of S3
       - key: MLFLOW_DEFAULT_ARTIFACT_ROOT
         value: /mlruns
     disk:
