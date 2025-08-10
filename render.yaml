@@ -1,0 +1,49 @@
+# render.yaml - Deploys the Iris API, MLflow Server, and a PostgreSQL DB
+
+services:
+  # 1. PostgreSQL Database for MLflow
+  - type: pserv
+    name: mlflow-db-postgres
+    runtime: postgres
+    postgres:
+      version: "13"
+    disk:
+      name: postgres-data
+      sizeGB: 1
+      mountPath: /var/lib/postgresql/data
+
+  # 2. MLflow Server
+  - type: web
+    name: mlflow-server
+    runtime: docker
+    dockerfilePath: ./mlflow/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: MLFLOW_BACKEND_STORE_URI
+        fromService:
+          type: pserv
+          name: mlflow-db-postgres
+          property: connectionString
+      - key: MLFLOW_DEFAULT_ARTIFACT_ROOT
+        value: s3://your-s3-bucket-name/mlflow-artifacts # IMPORTANT: Update this later
+    disk:
+      name: mlflow-artifacts-disk
+      sizeGB: 5
+      mountPath: /mlruns
+
+  # 3. Iris Prediction API
+  - type: web
+    name: iris-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: MLFLOW_TRACKING_URI
+        fromService:
+          type: web
+          name: mlflow-server
+          property: url
+      - key: DATABASE_URL
+        value: sqlite:///logs/logs.db
+      - key: DEBUG
+        value: "false"

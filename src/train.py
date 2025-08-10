@@ -110,15 +110,11 @@ if __name__ == "__main__":
 
     os.makedirs("artifacts", exist_ok=True)
 
-    # Set up MLflow tracking - use local file store if server not available
-    try:
-        mlflow.set_tracking_uri("http://127.0.0.1:5001")
-        # Test connection
-        mlflow.get_experiment_by_name("test")
-        print("✅ Connected to MLflow tracking server")
-    except Exception:
-        print("⚠️ MLflow server not available, using local file store")
-        mlflow.set_tracking_uri("file:./mlruns")
+    # ✨ UPDATED: Set up MLflow tracking by reading from the environment variable
+    mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
+    mlflow.set_tracking_uri(mlflow_tracking_uri)
+    print(f"✅ MLflow tracking URI set to: {mlflow_tracking_uri}")
+
 
     mlflow.set_experiment("Iris_Classifier")
 

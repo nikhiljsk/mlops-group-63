@@ -5,23 +5,22 @@ services:
   iris-api:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: production
+      dockerfile: Dockerfile # This points to our new, simpler Dockerfile
     ports:
       - "8000:8000"
     environment:
       - DEBUG=true
       - LOG_LEVEL=DEBUG
       - MLFLOW_TRACKING_URI=http://mlflow:5001
-      - DATABASE_URL=sqlite:///./logs.db
-      - USE_MLFLOW_REGISTRY=true
-      - MLFLOW_MODEL_NAME=iris-classifier
+      - DATABASE_URL=sqlite:///logs/logs.db # Point to the mounted logs directory
+    # ✨ THIS IS THE KEY FIX: Mount local code directly into the container
     volumes:
       - ./api:/app/api
       - ./src:/app/src
       - ./artifacts:/app/artifacts
       - ./data:/app/data
       - ./logs:/app/logs
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       mlflow:
         condition: service_healthy
@@ -35,19 +34,42 @@ services:
       retries: 3
       start_period: 40s
 
-  # MLflow tracking server
-  mlflow:
-    build: ./mlflow
-    ports:
-      - "5001:5001"
+  # PostgreSQL Database for MLflow
+  postgres-db:
+    image: postgres:13-alpine
+    environment:
+      - POSTGRES_USER=mlflow
+      - POSTGRES_PASSWORD=mlflow
+      - POSTGRES_DB=mlflow
     volumes:
-      # Mount a single named volume to the data directory
-      - mlflow_data:/mlflow_data
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - iris-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001')"]
+      test: ["CMD-SHELL", "pg_isready -U mlflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MLflow tracking server
+  mlflow:
+    build: ./mlflow
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=postgresql://mlflow:mlflow@postgres-db/mlflow
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlruns
+    ports:
+      - "5001:5001"
+    volumes:
+      - mlflow_artifacts:/mlruns
+    networks:
+      - iris-network
+    restart: unless-stopped
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -64,10 +86,6 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
     networks:
       - iris-network
     restart: unless-stopped
@@ -91,7 +109,8 @@ services:
       - prometheus
 
 volumes:
-  mlflow_data: {}
+  postgres_data: {}
+  mlflow_artifacts: {}
   prometheus_data: {}
   grafana_data: {}
 

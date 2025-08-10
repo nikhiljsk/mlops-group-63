@@ -1,6 +1,6 @@
 # Makefile for Iris Classification API Docker operations
 
-.PHONY: help build up down logs clean test test-unit test-integration dev monitoring lint format install-dev deploy deploy-prod rollback test-local
+.PHONY: help build up down logs clean train test test-unit test-integration dev monitoring lint format install-dev deploy deploy-prod rollback test-local
 
 # Default target
 help:
@@ -10,6 +10,7 @@ help:
 	@echo "  down          - Stop all services"
 	@echo "  logs          - View logs from all services"
 	@echo "  clean         - Remove all containers, volumes, and images"
+	@echo "  train         - Run the model training script inside Docker (services must be up)"
 	@echo "  test          - Run all tests"
 	@echo "  test-unit     - Run unit tests only"
 	@echo "  test-integration - Run integration tests only"
@@ -42,7 +43,12 @@ logs:
 # Clean up everything
 clean:
 	docker-compose down -v --rmi all --remove-orphans
-	docker system prune -f
+
+# ✨ UPDATED: Run the training script non-interactively inside the RUNNING container
+train:
+	@echo "Running model training inside the running 'iris-api' container..."
+	@echo "NOTE: This requires services to be running. Run 'make monitoring' first if they are not."
+	docker-compose exec -T iris-api python src/train.py
 
 # Install development dependencies
 install-dev:
@@ -106,7 +112,7 @@ shell:
 health:
 	@echo "Checking service health..."
 	@curl -s http://localhost:8000/health | python -m json.tool || echo "API not responding"
-	@curl -s -o /dev/null -w "MLflow: HTTP %{http_code}\n" http://localhost:5001 || echo "MLflow not responding"
+	@curl -s -o /dev/null -w "MLflow: HTTP %{http_code}\n" http://localhost:5001/health || echo "MLflow not responding"
 
 # Run local CI/CD pipeline test
 test-local:
