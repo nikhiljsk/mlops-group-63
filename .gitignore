@@ -1,28 +1,13 @@
-# .gitignore (Final Version)
+# .gitignore (Simplified Final Version)
 
-# Python virtual environments
+# Python
 .env
 .venv
-env/
-venv/
-
-# Python cache and compiled files
 __pycache__/
-*.py[cod]
 
-# IDE and editor files
+# IDE and OS files
 .idea/
 .vscode/
-*.swp
-
-# MLflow local tracking files
-mlruns/
-mlflow.db
-
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints
-
-# OS-specific files
 .DS_Store
 
 # Logs
@@ -30,14 +15,9 @@ logs/
 *.log
 logs.db
 
-# DVC files (if you are using DVC)
+# DVC - We are not using it for the deployment
 .dvc/
 .dvcignore
-data/iris.csv.dvc
 
-# ✨ THE KEY FIX: Ignore large files inside these directories,
-# but use the '!' rule to make sure the .gitkeep files ARE tracked.
-artifacts/*.pkl
-data/*.csv
-!artifacts/.gitkeep
-!data/.gitkeep
+# MLflow local runs
+mlruns/
