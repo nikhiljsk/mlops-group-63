@@ -10,14 +10,23 @@
    ```
 
 2. **Deploy to Render**:
-   - Go to [render.com](https://render.com)
+   - Go to [render.com](https://render.com) and sign up/login
+   - Click "New +" → "Blueprint"
    - Connect your GitHub repository
    - Render will automatically detect `render.yaml`
-   - Click "Deploy"
+   - Click "Apply" to deploy both services
 
 3. **Access Your Deployed App**:
    - API: `https://iris-ml-api.onrender.com`
    - Frontend: `https://iris-ml-frontend.onrender.com`
+
+## ✅ Fixed Issues in render.yaml:
+
+- **Removed invalid configurations** (disk mounts not available on free tier)
+- **Simplified environment variables** (removed redundant envVarGroups)
+- **Fixed static site type** (was incorrectly set as web service)
+- **Added mkdir command** to ensure artifacts directory exists
+- **Removed PORT override** (Render manages this automatically)
 
 ## What Gets Deployed
 

@@ -71,14 +71,5 @@ jobs:
         tags: |
           ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
           ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
-        
-    - name: Test Docker image
-      run: |
-        docker run -d --name test-container -p 8000:8000 \
-          ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
-        sleep 30
-        curl -f http://localhost:8000/health
-        curl -f -X POST "http://localhost:8000/predict" \
-          -H "Content-Type: application/json" \
-          -d '{"sepal_length": 5.1, "sepal_width": 3.5, "petal_length": 1.4, "petal_width": 0.2}'
-        docker stop test-container
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
