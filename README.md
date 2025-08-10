@@ -1,5 +1,9 @@
 # 🌸 MLOps Pipeline for Iris Classification
 
+## 🎬 Video Demo
+
+[Watch the video demo on YouTube](https://youtu.be/jteJDs5c3wY)
+
 A complete, production-ready MLOps pipeline demonstrating industry best practices for machine learning model development, deployment, and monitoring using the Iris dataset.
 
 ## 🚀 Features

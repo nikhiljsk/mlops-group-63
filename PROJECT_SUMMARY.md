@@ -1,5 +1,9 @@
 # MLOps Iris Classification Pipeline – Assignment Implementation ✅
 
+## 🎬 Video Demo
+
+[Watch the video demo on YouTube](https://youtu.be/jteJDs5c3wY)
+
 ## Overview
 
 End-to-end **MLOps pipeline** for Iris flower classification — covering **data versioning, model training, deployment, monitoring, and CI/CD**, with production-ready features and advanced enhancements.
