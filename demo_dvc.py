@@ -132,7 +132,7 @@ def main():
     show_dvc_commands()
     
     print("🎉 DVC integration provides complete data and model versioning!")
-    print("📚 This demonstrates industry-standard MLOps practices.")
+    print("📚 This implementation follows industry-standard MLOps practices.")
 
 if __name__ == "__main__":
     main()

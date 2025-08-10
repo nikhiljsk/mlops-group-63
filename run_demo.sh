@@ -234,7 +234,7 @@ main() {
             start_api
             start_frontend
             
-            print_success "🎉 MLOps Demo is now running!"
+            print_success "🎉 MLOps Pipeline is now running!"
             echo ""
             echo "📊 Access Points:"
             echo "  • Web Demo:    http://localhost:3001"

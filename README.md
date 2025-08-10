@@ -15,7 +15,7 @@ A complete, production-ready MLOps pipeline demonstrating industry best practice
 - **✅ Input validation** with Pydantic models
 - **📋 Structured logging** with SQLite storage
 
-## 🎬 Quick Demo (30/30 + Bonus Points!)
+## 🎬 Quick Demo
 
 ### 🚀 One-Command Demo
 ```bash
@@ -23,10 +23,10 @@ A complete, production-ready MLOps pipeline demonstrating industry best practice
 ```
 
 This launches the complete MLOps pipeline:
-- 🧠 **MLflow Server**: http://localhost:5000 (Experiment tracking)
 - 📊 **Prometheus**: http://localhost:9090 (Metrics & monitoring)
 - 🔥 **FastAPI**: http://localhost:8000 (ML API with docs)
-- 🌐 **Web Demo**: http://localhost:3000 (Interactive dashboard)
+- 🌐 **Web Demo**: http://localhost:3001 (Interactive dashboard)
+- 📈 **Grafana**: http://localhost:3000 (Visualization dashboard)
 
 ### 📋 Prerequisites
 - Python 3.11+
@@ -166,48 +166,43 @@ The GitHub Actions pipeline includes:
 - `DOCKER_HUB_USERNAME`
 - `DOCKER_HUB_ACCESS_TOKEN`
 
-## 🏆 Assignment Coverage (30/30 + 4 Bonus)
+## 🎯 Technical Implementation
 
-### ✅ Part 1: Repository and Data Versioning (4/4)
-- [x] Clean GitHub repository structure
-- [x] Iris dataset with preprocessing
-- [x] **DVC integration** for data versioning (bonus)
-- [x] Professional documentation
+### 📊 Data Management & Versioning
+- Clean GitHub repository with professional structure
+- Iris dataset with comprehensive preprocessing pipeline
+- **DVC integration** for data and model versioning
+- Centralized parameter management with `params.yaml`
 
-### ✅ Part 2: Model Development & Experiment Tracking (6/6)
-- [x] **5 ML algorithms** (LogisticRegression, RandomForest, SVM, KNN, NaiveBayes)
-- [x] **MLflow experiment tracking** with parameters and metrics
-- [x] **Best model selection** and registration
-- [x] **Comprehensive evaluation** with cross-validation
+### 🤖 Machine Learning Pipeline
+- **5 ML algorithms** implemented: LogisticRegression, RandomForest, SVM, KNN, NaiveBayes
+- **MLflow experiment tracking** with automated parameter and metric logging
+- **Intelligent model selection** based on F1 score performance
+- **Cross-validation** and comprehensive model evaluation
 
-### ✅ Part 3: API & Docker Packaging (4/4)
-- [x] **FastAPI REST API** with 6 endpoints
-- [x] **Docker containerization** with multi-stage build
-- [x] **JSON input/output** with Pydantic validation
-- [x] **Batch prediction** support
+### 🔥 Production API & Containerization
+- **FastAPI REST API** with 6 comprehensive endpoints
+- **Docker containerization** using multi-stage builds for optimization
+- **Pydantic validation** for robust input/output handling
+- **Batch prediction** support for efficient processing
 
-### ✅ Part 4: CI/CD with GitHub Actions (6/6)
-- [x] **Automated linting** with flake8
-- [x] **Comprehensive testing** with pytest (90%+ coverage)
-- [x] **Docker build & push** to Docker Hub
-- [x] **Deployment testing** automation
+### ⚙️ DevOps & Automation
+- **GitHub Actions CI/CD** with automated linting, testing, and deployment
+- **Comprehensive testing** suite with pytest achieving 90%+ coverage
+- **Docker Hub integration** for automated image building and distribution
+- **Quality gates** ensuring code standards and reliability
 
-### ✅ Part 5: Logging and Monitoring (4/4)
-- [x] **Structured logging** with SQLite storage
-- [x] **Prometheus metrics** integration
-- [x] **Custom ML metrics** (predictions, confidence, latency)
-- [x] **Health monitoring** endpoints
+### 📈 Monitoring & Observability
+- **Structured logging** with SQLite database storage
+- **Prometheus metrics** integration with custom ML-specific metrics
+- **Real-time monitoring** of predictions, confidence scores, and latency
+- **Health monitoring** endpoints for system status tracking
 
-### ✅ Part 6: Summary + Demo (2/2)
-- [x] **Architecture summary** document
-- [x] **Interactive web demo** for presentations
-- [x] **Video walkthrough** ready
-
-### 🎁 Bonus Features (4/4)
-- [x] **Advanced Pydantic validation** with custom models
-- [x] **Prometheus integration** with custom dashboards
-- [x] **Model retraining** capabilities
-- [x] **Interactive frontend** for demonstrations
+### 🌐 User Experience & Deployment
+- **Interactive web dashboard** for live demonstrations and testing
+- **Comprehensive API documentation** with automatic Swagger UI
+- **Cloud deployment** ready with Render.com configuration
+- **Live model retraining** capabilities via API endpoints
 
 ## 🔄 Data Flow & Process
 

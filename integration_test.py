@@ -383,7 +383,7 @@ def main():
     print(f"\n{Colors.BOLD}Results: {passed}/{total} tests passed{Colors.END}")
     
     if passed == total:
-        print_success("🎉 All integration tests passed! MLOps pipeline is ready for demo.")
+        print_success("🎉 All integration tests passed! MLOps pipeline is ready for deployment.")
         generate_test_report()
         return 0
     else:
