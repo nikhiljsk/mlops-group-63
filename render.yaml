@@ -18,7 +18,9 @@ services:
           property: connectionString
       # Note: Without a persistent disk, artifacts will be ephemeral.
       - key: MLFLOW_DEFAULT_ARTIFACT_ROOT
-        value: /mlruns
+        value: /mlflow/artifacts
+      - key: PORT
+        value: "5001"
 
   # 2. Iris Prediction API
   - type: web
@@ -39,6 +41,12 @@ services:
         value: sqlite:///logs/logs.db
       - key: DEBUG
         value: "false"
+      - key: LOG_LEVEL
+        value: "INFO"
+      - key: USE_MLFLOW_REGISTRY
+        value: "false"
+      - key: PORT
+        value: "8000"
 
 # The 'databases' block is the correct place to define the PostgreSQL instance.
 databases:

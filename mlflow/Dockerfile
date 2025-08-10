@@ -1,52 +1,53 @@
-# Final Dockerfile for Production Deployment on Render
+# MLflow Server Dockerfile for Render Deployment
 
-# Use a slim Python image as a base
 FROM python:3.11-slim
 
-# Set environment variables for a clean Python environment
+# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PATH="/opt/venv/bin:$PATH" \
-    PYTHONPATH="/app"
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create and activate a virtual environment
-RUN python -m venv /opt/venv
+# Set working directory
+WORKDIR /mlflow
 
-# Copy only the requirements file first to leverage Docker's build cache
-WORKDIR /app
-COPY requirements.txt .
-
-# Install Python dependencies into the virtual environment
+# Install MLflow and dependencies
 RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+    pip install \
+    mlflow[extras]==2.8.1 \
+    psycopg2-binary \
+    boto3 \
+    azure-storage-blob \
+    google-cloud-storage \
+    requests \
+    flask
 
-# ✨ THIS IS THE FIX: Copy all application code into the image
-COPY api/ ./api/
-COPY src/ ./src/
-COPY artifacts/ ./artifacts/
-COPY data/ ./data/
+# Copy server wrapper
+COPY mlflow_server.py /mlflow/mlflow_server.py
 
-# Create a non-root user for security
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# Create non-root user
+RUN groupadd -r mlflow && useradd -r -g mlflow mlflow
 
-# Create and set permissions for the logs directory
-RUN mkdir -p /app/logs && \
-    chown -R appuser:appuser /app
+# Create directories and set permissions
+RUN mkdir -p /mlflow/artifacts /mlflow/backend && \
+    chown -R mlflow:mlflow /mlflow && \
+    chmod +x /mlflow/mlflow_server.py
 
-# Switch to the non-root user
-USER appuser
+# Switch to non-root user
+USER mlflow
 
-# Health check to ensure the API is responsive
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+# Health check for MLflow server
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:5001/health || exit 1
 
-# Expose the port the application will run on
-EXPOSE 8000
+# Expose port (Render will map this to external port)
+EXPOSE 5001
 
-# The command to run the application
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start MLflow server wrapper
+CMD ["python", "/mlflow/mlflow_server.py"]
