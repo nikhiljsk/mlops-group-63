@@ -77,6 +77,11 @@ test_api_build() {
     print_header "🧪 Testing Main API Build"
     
     print_info "Building main API image..."
+    print_info "Checking directory structure first..."
+    ls -la
+    ls -la data/
+    ls -la artifacts/
+    
     if docker build -t test-iris-api .; then
         print_status "Main API image built successfully"
     else

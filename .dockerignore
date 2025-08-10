@@ -1,0 +1,79 @@
+# Docker ignore file for Iris Classification API
+
+# Git files
+.git
+.gitignore
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs (we'll create these in container)
+logs/*.log
+*.log
+
+# Test files
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation build
+docs/_build/
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# Local development files
+.env.local
+.env.development
+
+# Docker files (don't copy docker files into docker)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Deployment files (not needed in container)
+deploy/logs/
+*.md
+test-render-deployment.sh
+
+# Keep these important directories
+!data/
+!artifacts/
+!api/
+!src/
