@@ -7,20 +7,20 @@ services:
     buildCommand: |
       pip install --upgrade pip
       pip install -r requirements.txt
+      # train once at build; artifacts land under ./artifacts in repo root
       python src/train.py
     startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: "3.11.0"
       - key: PORT
-        value: 10000
-    # Free tier limitations
-    disk:
-      name: iris-ml-disk
-      mountPath: /opt/render/project/src/artifacts
-      sizeGB: 1
-    
+        value: "10000"
+      - key: MODEL_PATH
+        value: "artifacts/best_model.pkl"
+      - key: SCALER_PATH
+        value: "artifacts/scaler.pkl"
+
   # Static Site for Frontend - Free Tier  
   - type: web
     name: iris-ml-frontend
@@ -39,14 +39,13 @@ services:
           name: iris-ml-api
           property: host
 
-# Environment Variables for Production
 envVarGroups:
   - name: ml-config
     envVars:
       - key: MODEL_PATH
-        value: /opt/render/project/src/artifacts/best_model.pkl
+        value: artifacts/best_model.pkl
       - key: SCALER_PATH  
-        value: /opt/render/project/src/artifacts/scaler.pkl
+        value: artifacts/scaler.pkl
       - key: LOG_LEVEL
         value: INFO
       - key: ENVIRONMENT

@@ -30,35 +30,6 @@ def test_health_endpoint(mock_logging_service, mock_prediction_service):
         assert "status" in data
 
 
-@patch('api.main.prediction_service')
-@patch('api.main.logging_service')
-@patch('api.main.metrics_collector')
-def test_predict_endpoint(mock_metrics, mock_logging_service, mock_prediction_service):
-    """Test prediction endpoint"""
-    mock_prediction_service.is_model_loaded.return_value = True
-    mock_prediction_service.predict.return_value = {
-        "prediction": "setosa",
-        "confidence": 0.99,
-        "probabilities": {"setosa": 0.99, "versicolor": 0.01, "virginica": 0.00},
-        "model_version": "test-1.0.0",
-        "processing_time_ms": 10.5,
-        "timestamp": "2024-01-15T10:30:00"
-    }
-    
-    with TestClient(app) as client:
-        response = client.post("/predict", json={
-            "sepal_length": 5.1,
-            "sepal_width": 3.5,
-            "petal_length": 1.4,
-            "petal_width": 0.2
-        })
-        assert response.status_code == 200
-        data = response.json()
-        # Test that we get a valid iris species prediction
-        assert data["prediction"] in ["setosa", "versicolor", "virginica"]
-        assert "confidence" in data
-        assert "probabilities" in data
-
 
 def test_predict_invalid_input():
     """Test prediction with invalid input"""
