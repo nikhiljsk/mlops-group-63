@@ -1,39 +1,27 @@
 # render.yaml - Deploys the Iris API, MLflow Server, and a PostgreSQL DB
 
+# The 'services' block is for applications that run code.
 services:
-  # 1. PostgreSQL Database for MLflow
-  - type: pserv
-    name: mlflow-db-postgres
-    # ✨ FIX: The 'version' must be nested inside a 'postgres' block.
-    postgres:
-      version: "13"
-    disk:
-      name: postgres-data
-      sizeGB: 1
-      mountPath: /var/lib/postgresql/data
-
-  # 2. MLflow Server
+  # 1. MLflow Server
   - type: web
     name: mlflow-server
+    plan: free # Explicitly set the free instance type
     runtime: docker
     dockerfilePath: ./mlflow/Dockerfile
     healthCheckPath: /health
     envVars:
       - key: MLFLOW_BACKEND_STORE_URI
-        fromService:
-          type: pserv
-          name: mlflow-db-postgres
+        fromDatabase:
+          name: mlflow-db-postgres # Connects to the database defined below
           property: connectionString
+      # Note: Without a persistent disk, artifacts will be ephemeral.
       - key: MLFLOW_DEFAULT_ARTIFACT_ROOT
         value: /mlruns
-    disk:
-      name: mlflow-artifacts-disk
-      sizeGB: 5
-      mountPath: /mlruns
 
-  # 3. Iris Prediction API
+  # 2. Iris Prediction API
   - type: web
     name: iris-api
+    plan: free # Explicitly set the free instance type
     runtime: docker
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
@@ -41,9 +29,15 @@ services:
       - key: MLFLOW_TRACKING_URI
         fromService:
           type: web
-          name: mlflow-server
+          name: mlflow-server # Connects to the MLflow service above
           property: url
       - key: DATABASE_URL
         value: sqlite:///logs/logs.db
       - key: DEBUG
         value: "false"
+
+# The 'databases' block defines the PostgreSQL instance.
+databases:
+  - name: mlflow-db-postgres
+    plan: free # Use Render's free tier for the database
+    postgresMajorVersion: "13" # Required field for PostgreSQL version
