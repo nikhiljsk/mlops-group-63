@@ -1,10 +1,10 @@
 // MLOps Demo Frontend JavaScript
-const API_BASE = 'http://localhost:8000';
+// Auto-detect API base URL based on environment
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8000'  // Local development
+    : 'https://iris-ml-api.onrender.com';  // Production deployment
 
-// Check if we're running on a different port and adjust accordingly
-if (window.location.port === '3001') {
-    console.log('Frontend running on port 3001, API on port 8000');
-}
+console.log(`API Base URL: ${API_BASE}`);
 let predictionsChart;
 let metricsData = {
     predictions: [],

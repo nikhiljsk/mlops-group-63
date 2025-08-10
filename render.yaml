@@ -1,0 +1,53 @@
+services:
+  # FastAPI ML Service - Free Tier
+  - type: web
+    name: iris-ml-api
+    env: python
+    plan: free
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      python src/train.py
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 10000
+    # Free tier limitations
+    disk:
+      name: iris-ml-disk
+      mountPath: /opt/render/project/src/artifacts
+      sizeGB: 1
+    
+  # Static Site for Frontend - Free Tier  
+  - type: web
+    name: iris-ml-frontend
+    env: static
+    plan: free
+    buildCommand: echo "Static site ready"
+    staticPublishPath: ./frontend
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: API_BASE_URL
+        fromService:
+          type: web
+          name: iris-ml-api
+          property: host
+
+# Environment Variables for Production
+envVarGroups:
+  - name: ml-config
+    envVars:
+      - key: MODEL_PATH
+        value: /opt/render/project/src/artifacts/best_model.pkl
+      - key: SCALER_PATH  
+        value: /opt/render/project/src/artifacts/scaler.pkl
+      - key: LOG_LEVEL
+        value: INFO
+      - key: ENVIRONMENT
+        value: production
