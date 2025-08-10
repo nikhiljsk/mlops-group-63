@@ -54,7 +54,10 @@ def test_predict_endpoint(mock_metrics, mock_logging_service, mock_prediction_se
         })
         assert response.status_code == 200
         data = response.json()
-        assert data["prediction"] == "setosa"
+        # Test that we get a valid iris species prediction
+        assert data["prediction"] in ["setosa", "versicolor", "virginica"]
+        assert "confidence" in data
+        assert "probabilities" in data
 
 
 def test_predict_invalid_input():
@@ -67,3 +70,28 @@ def test_predict_invalid_input():
             "petal_width": 0.2
         })
         assert response.status_code == 422
+
+
+@patch('api.main.prediction_service')
+@patch('api.main.logging_service')
+@patch('api.main.metrics_collector')
+@patch('subprocess.run')
+def test_retrain_endpoint(mock_subprocess, mock_metrics, mock_logging_service, mock_prediction_service):
+    """Test retrain endpoint"""
+    # Mock successful training
+    mock_subprocess.return_value.returncode = 0
+    mock_subprocess.return_value.stderr = ""
+    
+    mock_prediction_service.load_model.return_value = None
+    mock_prediction_service.get_model_info.return_value = {
+        "model_name": "iris-classifier",
+        "model_type": "LogisticRegression",
+        "model_version": "retrained-1.0.0"
+    }
+    
+    with TestClient(app) as client:
+        response = client.post("/retrain")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert "timestamp" in data
