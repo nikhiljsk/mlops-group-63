@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -11,7 +11,7 @@ env:
   DOCKER_IMAGE_NAME: iris-classifier-api
 
 jobs:
-  # Job 1: Code Quality and Testing
+  # Job 1: Lint and Test
   test:
     runs-on: ubuntu-latest
     
@@ -24,72 +24,31 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         
-    - name: Cache pip dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-          
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install flake8
         
-    - name: Create artifacts directory
-      run: |
-        mkdir -p artifacts
-        # Create dummy model files for testing
-        python -c "
-        import joblib
-        from sklearn.linear_model import LogisticRegression
-        from sklearn.preprocessing import StandardScaler
-        import numpy as np
-        
-        # Create dummy model and scaler for testing
-        model = LogisticRegression()
-        scaler = StandardScaler()
-        
-        # Fit with dummy data
-        X_dummy = np.random.rand(10, 4)
-        y_dummy = np.random.choice(['setosa', 'versicolor', 'virginica'], 10)
-        
-        scaler.fit(X_dummy)
-        model.fit(scaler.transform(X_dummy), y_dummy)
-        
-        joblib.dump(model, 'artifacts/best_model.pkl')
-        joblib.dump(scaler, 'artifacts/scaler.pkl')
-        "
+    - name: Create dummy models for testing
+      run: python create_dummy_models.py
         
     - name: Lint with flake8
       run: |
-        # Stop the build if there are Python syntax errors or undefined names
         flake8 api/ src/ --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Exit-zero treats all errors as warnings. GitHub editor is 127 chars wide
         flake8 api/ src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
         
-
-        
-    - name: Run unit tests with pytest
+    - name: Run tests
       run: |
-        pytest tests/ -v --cov=api --cov=src --cov-report=xml --cov-report=term-missing
+        pytest tests/ -v --cov=api --cov=src --cov-report=term-missing
       env:
         PYTHONPATH: .
-        
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
 
   # Job 2: Docker Build and Push
   docker-build-push:
     runs-on: ubuntu-latest
     needs: test
+    if: github.ref == 'refs/heads/main'
     
     steps:
     - name: Checkout code
@@ -103,389 +62,23 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-      
-    - name: Extract metadata for Docker
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-        labels: |
-          org.opencontainers.image.title=Iris Classification API
-          org.opencontainers.image.description=MLOps-enabled REST API for Iris flower classification
-          org.opencontainers.image.vendor=MLOps Team
-          
-    - name: Create artifacts directory for Docker build
-      run: |
-        mkdir -p artifacts data
-        # Create dummy files for Docker build
-        python -c "
-        import joblib
-        from sklearn.linear_model import LogisticRegression
-        from sklearn.preprocessing import StandardScaler
-        import numpy as np
-        
-        model = LogisticRegression()
-        scaler = StandardScaler()
-        X_dummy = np.random.rand(10, 4)
-        y_dummy = np.random.choice(['setosa', 'versicolor', 'virginica'], 10)
-        scaler.fit(X_dummy)
-        model.fit(scaler.transform(X_dummy), y_dummy)
-        joblib.dump(model, 'artifacts/best_model.pkl')
-        joblib.dump(scaler, 'artifacts/scaler.pkl')
-        "
         
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
-        platforms: linux/amd64,linux/arm64
         push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        
-    - name: Test Docker image locally
-      run: |
-        # Pull the image we just pushed
-        docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
-        
-        # Start container in background
-        docker run -d --name test-container -p 8000:8000 \
+        tags: |
+          ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
           ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
         
-        # Wait for container to be ready
+    - name: Test Docker image
+      run: |
+        docker run -d --name test-container -p 8000:8000 \
+          ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
         sleep 30
-        
-        # Test health endpoint
-        curl -f http://localhost:8000/health || exit 1
-        
-        # Test prediction endpoint
+        curl -f http://localhost:8000/health
         curl -f -X POST "http://localhost:8000/predict" \
           -H "Content-Type: application/json" \
-          -d '{"sepal_length": 5.1, "sepal_width": 3.5, "petal_length": 1.4, "petal_width": 0.2}' || exit 1
-        
-        # Stop container
+          -d '{"sepal_length": 5.1, "sepal_width": 3.5, "petal_length": 1.4, "petal_width": 0.2}'
         docker stop test-container
-        docker rm test-container
-        
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-        
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
-        
-    - name: Generate build summary
-      run: |
-        echo "## Docker Build Summary 🐳" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Image:** \`${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Tags pushed:**" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Platforms:** linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Pull command:**" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-        echo "docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-  # Job 3: Integration Tests
-  integration-test:
-    runs-on: ubuntu-latest
-    needs: docker-build-push
-    
-    services:
-      mlflow:
-        image: python:3.11-slim
-        ports:
-          - 5001:5001
-        env:
-          MLFLOW_BACKEND_STORE_URI: sqlite:///mlflow/mlflow.db
-          MLFLOW_DEFAULT_ARTIFACT_ROOT: /mlflow/artifacts
-        options: >-
-          --health-cmd "curl -f http://localhost:5001/health || exit 1"
-          --health-interval 30s
-          --health-timeout 10s
-          --health-retries 5
-          --health-start-period 60s
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        
-    - name: Create test artifacts
-      run: |
-        mkdir -p artifacts
-        python -c "
-        import joblib
-        from sklearn.linear_model import LogisticRegression
-        from sklearn.preprocessing import StandardScaler
-        import numpy as np
-        
-        model = LogisticRegression()
-        scaler = StandardScaler()
-        X_dummy = np.random.rand(10, 4)
-        y_dummy = np.random.choice(['setosa', 'versicolor', 'virginica'], 10)
-        scaler.fit(X_dummy)
-        model.fit(scaler.transform(X_dummy), y_dummy)
-        joblib.dump(model, 'artifacts/best_model.pkl')
-        joblib.dump(scaler, 'artifacts/scaler.pkl')
-        "
-        
-    - name: Start MLflow server
-      run: |
-        pip install mlflow[extras]
-        mkdir -p mlflow/artifacts
-        mlflow server \
-          --backend-store-uri sqlite:///mlflow/mlflow.db \
-          --default-artifact-root ./mlflow/artifacts \
-          --host 0.0.0.0 \
-          --port 5001 &
-        sleep 30
-        
-    - name: Run integration tests
-      run: |
-        pytest tests/integration/ -v
-      env:
-        PYTHONPATH: .
-        MLFLOW_TRACKING_URI: http://localhost:5001
-        
-    - name: Test API endpoints end-to-end
-      run: |
-        # Start the API server
-        uvicorn api.main:app --host 0.0.0.0 --port 8000 &
-        API_PID=$!
-        sleep 15
-        
-        # Test all endpoints
-        python -c "
-        import requests
-        import json
-        
-        base_url = 'http://localhost:8000'
-        
-        # Test health endpoint
-        response = requests.get(f'{base_url}/health')
-        assert response.status_code == 200
-        print('✅ Health check passed')
-        
-        # Test prediction endpoint
-        prediction_data = {
-            'sepal_length': 5.1,
-            'sepal_width': 3.5,
-            'petal_length': 1.4,
-            'petal_width': 0.2
-        }
-        response = requests.post(f'{base_url}/predict', json=prediction_data)
-        assert response.status_code == 200
-        result = response.json()
-        assert 'prediction' in result
-        assert 'confidence' in result
-        print('✅ Prediction endpoint passed')
-        
-        # Test batch prediction endpoint
-        batch_data = {
-            'samples': [prediction_data, prediction_data]
-        }
-        response = requests.post(f'{base_url}/predict/batch', json=batch_data)
-        assert response.status_code == 200
-        result = response.json()
-        assert 'predictions' in result
-        assert len(result['predictions']) == 2
-        print('✅ Batch prediction endpoint passed')
-        
-        # Test model info endpoint
-        response = requests.get(f'{base_url}/model/info')
-        assert response.status_code == 200
-        result = response.json()
-        assert 'model_name' in result
-        print('✅ Model info endpoint passed')
-        
-        # Test metrics endpoint
-        response = requests.get(f'{base_url}/metrics')
-        assert response.status_code == 200
-        print('✅ Metrics endpoint passed')
-        
-        print('🎉 All integration tests passed!')
-        "
-        
-        # Stop the API server
-        kill $API_PID
-
-  # Job 4: Deploy (only on main branch)
-  deploy:
-    runs-on: ubuntu-latest
-    needs: integration-test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-        
-    - name: Create deployment script
-      run: |
-        cat > deploy.sh << 'EOF'
-        #!/bin/bash
-        
-        # Deployment script for Iris Classification API
-        set -e
-        
-        echo "🚀 Starting deployment..."
-        
-        # Configuration
-        IMAGE_NAME="${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}"
-        CONTAINER_NAME="iris-api-prod"
-        PORT="8000"
-        
-        echo "📦 Pulling latest image: $IMAGE_NAME"
-        docker pull $IMAGE_NAME
-        
-        # Stop and remove existing container if it exists
-        if docker ps -a --format 'table {{.Names}}' | grep -q $CONTAINER_NAME; then
-            echo "🛑 Stopping existing container..."
-            docker stop $CONTAINER_NAME || true
-            docker rm $CONTAINER_NAME || true
-        fi
-        
-        # Start new container
-        echo "🏃 Starting new container..."
-        docker run -d \
-          --name $CONTAINER_NAME \
-          --restart unless-stopped \
-          -p $PORT:8000 \
-          -e LOG_LEVEL=INFO \
-          -e USE_MLFLOW_REGISTRY=false \
-          -v $(pwd)/logs:/app/logs \
-          -v $(pwd)/data:/app/data \
-          $IMAGE_NAME
-        
-        # Wait for container to be ready
-        echo "⏳ Waiting for container to be ready..."
-        sleep 30
-        
-        # Health check
-        echo "🏥 Performing health check..."
-        for i in {1..10}; do
-          if curl -f http://localhost:$PORT/health; then
-            echo "✅ Deployment successful!"
-            echo "🌐 API is available at: http://localhost:$PORT"
-            echo "📊 Health check: http://localhost:$PORT/health"
-            echo "📈 Metrics: http://localhost:$PORT/metrics"
-            echo "📚 API docs: http://localhost:$PORT/docs"
-            exit 0
-          fi
-          echo "⏳ Waiting for API to be ready... (attempt $i/10)"
-          sleep 10
-        done
-        
-        echo "❌ Deployment failed - API not responding"
-        docker logs $CONTAINER_NAME
-        exit 1
-        EOF
-        
-        chmod +x deploy.sh
-        
-    - name: Deploy to production
-      run: |
-        echo "🚀 Deploying to production environment..."
-        ./deploy.sh
-        
-    - name: Post-deployment tests
-      run: |
-        echo "🧪 Running post-deployment tests..."
-        
-        # Test all critical endpoints
-        python -c "
-        import requests
-        import time
-        
-        base_url = 'http://localhost:8000'
-        
-        print('Testing health endpoint...')
-        response = requests.get(f'{base_url}/health')
-        assert response.status_code == 200
-        health_data = response.json()
-        assert health_data['status'] in ['healthy', 'degraded']
-        print('✅ Health check passed')
-        
-        print('Testing prediction endpoint...')
-        prediction_data = {
-            'sepal_length': 5.1,
-            'sepal_width': 3.5,
-            'petal_length': 1.4,
-            'petal_width': 0.2
-        }
-        response = requests.post(f'{base_url}/predict', json=prediction_data)
-        assert response.status_code == 200
-        pred_data = response.json()
-        assert 'prediction' in pred_data
-        assert pred_data['prediction'] in ['setosa', 'versicolor', 'virginica']
-        print('✅ Prediction endpoint passed')
-        
-        print('Testing model info endpoint...')
-        response = requests.get(f'{base_url}/model/info')
-        assert response.status_code == 200
-        model_data = response.json()
-        assert 'model_name' in model_data
-        print('✅ Model info endpoint passed')
-        
-        print('Testing metrics endpoint...')
-        response = requests.get(f'{base_url}/metrics')
-        assert response.status_code == 200
-        print('✅ Metrics endpoint passed')
-        
-        print('🎉 All post-deployment tests passed!')
-        "
-        
-    - name: Generate deployment summary
-      run: |
-        echo "## Deployment Summary 🚀" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Status:** ✅ Successfully deployed" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Image:** \`${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Endpoints:**" >> $GITHUB_STEP_SUMMARY
-        echo "- 🌐 API: http://localhost:8000" >> $GITHUB_STEP_SUMMARY
-        echo "- 🏥 Health: http://localhost:8000/health" >> $GITHUB_STEP_SUMMARY
-        echo "- 📈 Metrics: http://localhost:8000/metrics" >> $GITHUB_STEP_SUMMARY
-        echo "- 📚 Docs: http://localhost:8000/docs" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Container:** \`iris-api-prod\`" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Deployment Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

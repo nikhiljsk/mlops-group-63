@@ -311,60 +311,7 @@ async def get_metrics():
         )
 
 
-@app.post("/retrain")
-async def trigger_retraining():
-    """
-    Trigger model retraining process.
-    Checks if retraining is needed and initiates the process.
-    """
-    try:
-        from .retraining import retraining_service
-
-        # Check if retraining is needed
-        needs_retraining = await retraining_service.check_retraining_needed()
-
-        if not needs_retraining:
-            return {
-                "status": "skipped",
-                "message": "Retraining not needed at this time",
-                "timestamp": datetime.now().isoformat(),
-            }
-
-        # Trigger retraining
-        result = await retraining_service.trigger_retraining()
-
-        return {"retraining_result": result, "timestamp": datetime.now().isoformat()}
-
-    except Exception as e:
-        logger.error(f"Retraining endpoint error: {e}")
-        raise HTTPException(status_code=500, detail=f"Retraining failed: {str(e)}")
-
-
-@app.get("/retrain/status")
-async def get_retraining_status():
-    """
-    Get current retraining status and model information.
-    """
-    try:
-        from .retraining import retraining_service
-
-        needs_retraining = await retraining_service.check_retraining_needed()
-        last_training = await retraining_service._get_last_training_time()
-
-        return {
-            "needs_retraining": needs_retraining,
-            "last_training": last_training.isoformat() if last_training else None,
-            "current_model": (
-                prediction_service.get_model_info() if prediction_service else None
-            ),
-            "timestamp": datetime.now().isoformat(),
-        }
-
-    except Exception as e:
-        logger.error(f"Retraining status error: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get retraining status: {str(e)}"
-        )
+# Retraining endpoints removed for simplicity - not required for basic assignment
 
 
 if __name__ == "__main__":

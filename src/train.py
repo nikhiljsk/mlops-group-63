@@ -1,152 +1,79 @@
-# src/train.py
+"""Train Iris classification models with MLflow tracking."""
 
 import os
-from datetime import datetime
-
 import joblib
 import mlflow
 import mlflow.sklearn
-import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import (accuracy_score, classification_report, f1_score,
-                             precision_score, recall_score)
-from sklearn.model_selection import cross_val_score
+from sklearn.metrics import accuracy_score, f1_score
 
 from preprocess import load_data, preprocess_data
 
 
-def evaluate_model_performance(model, X_train, X_test, y_train, y_test):
-    """Calculate comprehensive metrics for model evaluation"""
-    y_pred = model.predict(X_test)
-    y_pred_proba = model.predict_proba(X_test)
-
-    # Calculate cross-validation scores for more robust evaluation
-    cv_scores = cross_val_score(model, X_train, y_train, cv=5, scoring="accuracy")
-
-    metrics = {
-        "accuracy": accuracy_score(y_test, y_pred),
-        "precision": precision_score(y_test, y_pred, average="weighted"),
-        "recall": recall_score(y_test, y_pred, average="weighted"),
-        "f1_score": f1_score(y_test, y_pred, average="weighted"),
-        "cv_mean": cv_scores.mean(),
-        "cv_std": cv_scores.std(),
-    }
-
-    return metrics, y_pred, y_pred_proba
-
-
-def train_and_log_model(model, X_train, X_test, y_train, y_test, model_name):
-    """Train model and log comprehensive metrics to MLflow"""
-    with mlflow.start_run(
-        run_name=f"{model_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    ):
+def train_and_evaluate_model(model, X_train, X_test, y_train, y_test, model_name):
+    """Train model and log metrics to MLflow"""
+    with mlflow.start_run(run_name=model_name):
         # Train the model
         model.fit(X_train, y_train)
-
-        # Get comprehensive evaluation metrics
-        metrics, y_pred, y_pred_proba = evaluate_model_performance(
-            model, X_train, X_test, y_train, y_test
-        )
-
-        # Log model parameters
+        
+        # Make predictions and calculate metrics
+        y_pred = model.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
+        f1 = f1_score(y_test, y_pred, average="weighted")
+        
+        # Log parameters and metrics
         mlflow.log_param("model_type", model_name)
         mlflow.log_param("train_size", len(X_train))
         mlflow.log_param("test_size", len(X_test))
-        mlflow.log_param("features", X_train.shape[1])
-
-        # Log all metrics
-        for metric_name, metric_value in metrics.items():
-            mlflow.log_metric(metric_name, metric_value)
-
-        # Log the model with signature for better registry integration
-        signature = mlflow.models.infer_signature(X_test, y_pred_proba)
-        mlflow.sklearn.log_model(
-            model, artifact_path="model", signature=signature, input_example=X_test[:1]
-        )
-
-        # Log classification report as artifact
-        report = classification_report(y_test, y_pred, output_dict=True)
-        mlflow.log_dict(report, "classification_report.json")
-
-        print(
-            f"✅ {model_name} - Accuracy: {metrics['accuracy']:.4f}, F1: {metrics['f1_score']:.4f}"
-        )
-        return model, metrics
-
-
-def register_best_model(model_name, run_id, model_metrics):
-    """Register the best model in MLflow Model Registry"""
-    try:
-        # Create registered model if it doesn't exist
-        try:
-            mlflow.create_registered_model(model_name)
-        except mlflow.exceptions.RestException:
-            # Model already exists
-            pass
-
-        # Create model version
-        model_version = mlflow.register_model(
-            model_uri=f"runs:/{run_id}/model", name=model_name
-        )
-
-        # Add description with metrics
-        description = f"Accuracy: {model_metrics['accuracy']:.4f}, F1: {model_metrics['f1_score']:.4f}"
-        mlflow.update_model_version(
-            name=model_name, version=model_version.version, description=description
-        )
-
-        print(f"✅ Model registered as {model_name} version {model_version.version}")
-        return model_version
-    except Exception as e:
-        print(f"⚠️ Model registration failed: {e}")
-        return None
+        mlflow.log_metric("accuracy", accuracy)
+        mlflow.log_metric("f1_score", f1)
+        
+        # Log the model
+        mlflow.sklearn.log_model(model, "model")
+        
+        print(f"✅ {model_name} - Accuracy: {accuracy:.4f}, F1: {f1:.4f}")
+        return model, {"accuracy": accuracy, "f1_score": f1}
 
 
 if __name__ == "__main__":
+    print("🚀 Starting model training...")
+    
     # Load and preprocess data
     df = load_data("data/iris.csv")
     X_train, X_test, y_train, y_test = preprocess_data(df)
-
+    
+    # Create artifacts directory
     os.makedirs("artifacts", exist_ok=True)
-
-    # ✨ UPDATED: Set up MLflow tracking by reading from the environment variable
-    mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
-    mlflow.set_tracking_uri(mlflow_tracking_uri)
-    print(f"✅ MLflow tracking URI set to: {mlflow_tracking_uri}")
-
-
-    mlflow.set_experiment("Iris_Classifier")
-
-    # Train Logistic Regression
-    lr_model = LogisticRegression()
-    lr_model, lr_metrics = train_and_log_model(
-        lr_model, X_train, X_test, y_train, y_test, "LogisticRegression"
+    
+    # Set up MLflow
+    mlflow.set_tracking_uri("file:./mlruns")
+    mlflow.set_experiment("Iris_Classification")
+    
+    # Train models
+    lr_model, lr_metrics = train_and_evaluate_model(
+        LogisticRegression(random_state=42), 
+        X_train, X_test, y_train, y_test, 
+        "LogisticRegression"
     )
-
-    # Train Random Forest
-    rf_model = RandomForestClassifier()
-    rf_model, rf_metrics = train_and_log_model(
-        rf_model, X_train, X_test, y_train, y_test, "RandomForest"
+    
+    rf_model, rf_metrics = train_and_evaluate_model(
+        RandomForestClassifier(random_state=42), 
+        X_train, X_test, y_train, y_test, 
+        "RandomForest"
     )
-
-    # Compare models and select the best one
+    
+    # Select best model
     if rf_metrics["f1_score"] > lr_metrics["f1_score"]:
         best_model = rf_model
-        best_metrics = rf_metrics
-        best_model_name = "RandomForest"
+        best_name = "RandomForest"
         print(f"🏆 Best model: RandomForest (F1: {rf_metrics['f1_score']:.4f})")
     else:
         best_model = lr_model
-        best_metrics = lr_metrics
-        best_model_name = "LogisticRegression"
+        best_name = "LogisticRegression"
         print(f"🏆 Best model: LogisticRegression (F1: {lr_metrics['f1_score']:.4f})")
-
-    # Save best model locally for fallback
+    
+    # Save best model
     joblib.dump(best_model, "artifacts/best_model.pkl")
     print("✅ Best model saved to 'artifacts/best_model.pkl'")
-
-    # Register best model in MLflow Model Registry
-    current_run_id = mlflow.active_run().info.run_id if mlflow.active_run() else None
-    if current_run_id:
-        register_best_model("iris-classifier", current_run_id, best_metrics)
+    print("🎉 Training completed!")

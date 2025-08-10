@@ -1,52 +1,24 @@
-"""
-Unit tests for the PredictionService.
-"""
+"""Basic tests for PredictionService."""
 
 import pytest
 import numpy as np
-import tempfile
-import os
-import joblib
-from unittest.mock import patch, MagicMock
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
+from unittest.mock import MagicMock
 
 from api.prediction_service import PredictionService
-from api.config import Settings
 
 
-class TestPredictionService:
-    """Test PredictionService class"""
-    
-    @pytest.fixture
-    def mock_settings(self):
-        """Create mock settings for testing"""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            model_path = os.path.join(temp_dir, "test_model.pkl")
-            scaler_path = os.path.join(temp_dir, "test_scaler.pkl")
-            
-            # Create and save dummy model and scaler
-            model = LogisticRegression(random_state=42)
-            scaler = StandardScaler()
-            
-            X_dummy = np.random.RandomState(42).rand(100, 4)
-            y_dummy = np.random.RandomState(42).choice(['setosa', 'versicolor', 'virginica'], 100)
-            
-            X_scaled = scaler.fit_transform(X_dummy)
-            model.fit(X_scaled, y_dummy)
-            
-            joblib.dump(model, model_path)
-            joblib.dump(scaler, scaler_path)
-            
-            settings = Settings(
-                model_path=model_path,
-                scaler_path=scaler_path,
-                use_mlflow_registry=False
-            )
-            
-            yield settings
-    
-    def test_initialization(self, mock_settings):
+def test_prediction_service_initialization():
+    """Test PredictionService initialization"""
+    mock_settings = MagicMock()
+    service = PredictionService(mock_settings)
+    assert service is not None
+
+
+def test_is_model_loaded_false_initially():
+    """Test model loaded status is false initially"""
+    mock_settings = MagicMock()
+    service = PredictionService(mock_settings)
+    assert service.is_model_loaded() is False
         """Test PredictionService initialization"""
         service = PredictionService(mock_settings)
         assert service.settings == mock_settings

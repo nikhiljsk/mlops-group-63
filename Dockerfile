@@ -1,23 +1,12 @@
-# Iris Classification API Dockerfile for Render
-
 FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH="/app"
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create virtual environment
-RUN python -m venv /opt/venv
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -26,31 +15,16 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy essential application code
+# Copy application code
 COPY api ./api
 COPY src ./src
+COPY create_dummy_models.py .
 
-# Copy model creation script
-COPY create_dummy_models.py ./create_dummy_models.py
-
-# Create all necessary directories
-RUN mkdir -p ./artifacts ./data ./logs
-
-# Create dummy model files for the application to work
-RUN python create_dummy_models.py
-
-# Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-
-# Create directories and set permissions
-RUN mkdir -p /app/logs && \
-    chown -R appuser:appuser /app
-
-# Switch to non-root user
-USER appuser
+# Create directories and dummy models
+RUN mkdir -p ./artifacts ./data ./logs && python create_dummy_models.py
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Expose port
