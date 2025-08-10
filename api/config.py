@@ -23,5 +23,4 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
     log_predictions: bool = Field(default=True, env="LOG_PREDICTIONS")
 
-    class Config:
-        env_file = ".env"
+    model_config = {"env_file": ".env"}

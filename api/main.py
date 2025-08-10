@@ -139,7 +139,7 @@ async def predict(request: "PredictionRequest") -> "PredictionResponse":
 
         # Log the prediction if logging service is available
         if logging_service:
-            await logging_service.log_prediction(request.dict(), result)
+            await logging_service.log_prediction(request.model_dump(), result)
 
         # Return formatted response
         from .models import PredictionResponse
@@ -184,7 +184,7 @@ async def predict_batch(request: "BatchPredictionRequest") -> "BatchPredictionRe
         # Log batch prediction if logging service is available
         if logging_service:
             await logging_service.log_batch_prediction(
-                [sample.dict() for sample in request.samples], result
+                [sample.model_dump() for sample in request.samples], result
             )
 
         # Return formatted response

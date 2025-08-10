@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class PredictionRequest(BaseModel):
@@ -29,7 +29,8 @@ class PredictionRequest(BaseModel):
         ..., ge=0.0, le=10.0, description="Petal width in centimeters (0-10 cm range)"
     )
 
-    @validator("sepal_length", "sepal_width", "petal_length", "petal_width")
+    @field_validator("sepal_length", "sepal_width", "petal_length", "petal_width")
+    @classmethod
     def validate_measurements(cls, v):
         """Ensure measurements are reasonable for iris flowers"""
         if v < 0:
@@ -103,12 +104,13 @@ class BatchPredictionRequest(BaseModel):
 
     samples: List[PredictionRequest] = Field(
         ...,
-        min_items=1,
-        max_items=100,  # Reasonable batch size limit
+        min_length=1,
+        max_length=100,  # Reasonable batch size limit
         description="List of iris flower measurements for batch prediction",
     )
 
-    @validator("samples")
+    @field_validator("samples")
+    @classmethod
     def validate_batch_size(cls, v):
         """Ensure batch size is reasonable"""
         if len(v) > 100:
